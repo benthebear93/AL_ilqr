@@ -1,7 +1,7 @@
 # ilqr
 
-Python implementation of **AL-iLQR** for Trajectory optimization
-
+Python implementation of **AL-iLQR** for Trajectory optimization 
+For details, see the original [conference paper](http://roboticexplorationlab.org/papers/altro-iros.pdf) or [Julia Altro](https://github.com/RoboticExplorationLab/Altro.jl) 
 
 ## Requirements
 
