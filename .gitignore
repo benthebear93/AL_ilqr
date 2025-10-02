@@ -1,0 +1,45 @@
+# ---------------------------
+# Python bytecode & cache
+# ---------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C-extensions
+*.so
+*.pyd
+*.dll
+
+# ---------------------------
+# Virtual envs & package tools
+# ---------------------------
+.venv/
+venv/
+env/
+ENV/
+.python-version        # pyenv / uv uses this sometimes
+.uv/                   # uv internal cache (safe to ignore)
+
+# JAX / compilation caches
+.jax_cache/
+.xla_cache/
+
+# ---------------------------
+# Notebooks
+# ---------------------------
+.ipynb_checkpoints/
+
+# ---------------------------
+# Editors / IDE
+# ---------------------------
+.vscode/
+.idea/
+*.code-workspace
+
+# ---------------------------
+# Logs / temp
+# ---------------------------
+*.log
+*.tmp
+*.temp
+*.bak
