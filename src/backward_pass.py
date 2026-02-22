@@ -1,6 +1,3 @@
-import jax.numpy as jnp
-from jax.scipy.linalg import solve_triangular
-from scipy.linalg.lapack import dpotrf, dpotrs
 import numpy as np
 from scipy.linalg import blas, lapack
 

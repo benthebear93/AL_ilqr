@@ -1,6 +1,5 @@
 from dataclasses import replace
-import jax
-import jax.numpy as jnp
+import numpy as np
 
 from data.problem import ProblemData
 from data.policy import PolicyData
@@ -45,10 +44,9 @@ def ilqr_solve(solver: Solver, iteration=1):
             policy, problem = backward_pass(policy, problem, mode="nominal")
             data = lagrangian_gradient(data, policy, problem)
 
-        gradient_norm = jnp.linalg.norm(data.gradient, jnp.inf)
+        gradient_norm = np.linalg.norm(data.gradient, np.inf)
 
-        iterations = data.iterations.at[0].add(1)
-        data = replace(data, iterations=iterations)
+        data.iterations[0] += 1
 
         if solver.options.verbose:
             print(
@@ -88,9 +86,9 @@ def constrained_ilqr_solve(
 
     # reset duals, penalties
     for lam in objective.costs.constraint_dual:
-        lam = lam * 0.0
+        lam.fill(0.0)
     for rho in objective.costs.constraint_penalty:
-        rho = rho * solver.options.initial_constraint_penalty
+        rho.fill(solver.options.initial_constraint_penalty)
 
     for i in range(solver.options.max_dual_updates):
         if solver.options.verbose:

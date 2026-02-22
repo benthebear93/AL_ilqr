@@ -1,5 +1,6 @@
-import jax
-import jax.numpy as jnp
+import numpy as np
+
+from .finite_diff import gradient, hessian, jacobian
 
 
 class Cost:
@@ -15,67 +16,56 @@ class Cost:
         self.num_action = num_action
         self.num_parameter = num_parameter
 
-        # gradient
-        self.grad_state = jax.grad(f, argnums=0)
-        self.grad_action = jax.grad(f, argnums=1)
-
-        # hessian
-        self.hess_state_state = jax.hessian(f, argnums=0)
-        self.hess_action_action = jax.hessian(f, argnums=1)
-
-        self.evaluate_cache = jnp.zeros((1,))
-        self.gradient_state_cache = jnp.zeros((num_state,))
-        self.gradient_action_cache = jnp.zeros((num_action,))
-        self.hessian_state_state_cache = jnp.zeros((num_state, num_state))
-        self.hessian_action_action_cache = jnp.zeros((num_action, num_action))
-        self.hessian_action_state_cache = jnp.zeros((num_action, num_state))
-
-        def grad_action_fn(x, u, w=None):
-            return (
-                jax.grad(f, argnums=1)(x, u, w)
-                if num_parameter > 0
-                else jax.grad(f, argnums=1)(x, u)
-            )
-
-        self.hess_action_state = jax.jacfwd(grad_action_fn, argnums=0)
+        self.evaluate_cache = np.zeros((1,))
+        self.gradient_state_cache = np.zeros((num_state,))
+        self.gradient_action_cache = np.zeros((num_action,))
+        self.hessian_state_state_cache = np.zeros((num_state, num_state))
+        self.hessian_action_action_cache = np.zeros((num_action, num_action))
+        self.hessian_action_state_cache = np.zeros((num_action, num_state))
 
     def evaluate(self, x, u, w=None):
-        return self.f(x, u, w) if self.num_parameter > 0 else self.f(x, u)
+        val = self.f(x, u, w) if self.num_parameter > 0 else self.f(x, u)
+        return float(np.asarray(val))
 
     def gradient_state(self, x, u, w=None):
-        return (
-            self.grad_state(x, u, w)
-            if self.num_parameter > 0
-            else self.grad_state(x, u)
-        )
+        if self.num_state == 0:
+            return np.zeros((0,))
+        x = np.asarray(x, dtype=float)
+        if self.num_parameter > 0:
+            return gradient(lambda xx: self.f(xx, u, w), x)
+        return gradient(lambda xx: self.f(xx, u), x)
 
     def gradient_action(self, x, u, w=None):
-        return (
-            self.grad_action(x, u, w)
-            if self.num_parameter > 0
-            else self.grad_action(x, u)
-        )
+        if self.num_action == 0:
+            return np.zeros((0,))
+        u = np.asarray(u, dtype=float)
+        if self.num_parameter > 0:
+            return gradient(lambda uu: self.f(x, uu, w), u)
+        return gradient(lambda uu: self.f(x, uu), u)
 
     def hessian_state_state(self, x, u, w=None):
-        return (
-            self.hess_state_state(x, u, w)
-            if self.num_parameter > 0
-            else self.hess_state_state(x, u)
-        )
+        if self.num_state == 0:
+            return np.zeros((0, 0))
+        x = np.asarray(x, dtype=float)
+        if self.num_parameter > 0:
+            return hessian(lambda xx: self.f(xx, u, w), x)
+        return hessian(lambda xx: self.f(xx, u), x)
 
     def hessian_action_action(self, x, u, w=None):
-        return (
-            self.hess_action_action(x, u, w)
-            if self.num_parameter > 0
-            else self.hess_action_action(x, u)
-        )
+        if self.num_action == 0:
+            return np.zeros((0, 0))
+        u = np.asarray(u, dtype=float)
+        if self.num_parameter > 0:
+            return hessian(lambda uu: self.f(x, uu, w), u)
+        return hessian(lambda uu: self.f(x, uu), u)
 
     def hessian_action_state(self, x, u, w=None):
-        return (
-            self.hess_action_state(x, u, w)
-            if self.num_parameter > 0
-            else self.hess_action_state(x, u)
-        )
+        if self.num_action == 0 or self.num_state == 0:
+            return np.zeros((self.num_action, self.num_state))
+        x = np.asarray(x, dtype=float)
+        if self.num_parameter > 0:
+            return jacobian(lambda xx: self.gradient_action(xx, u, w), x)
+        return jacobian(lambda xx: self.gradient_action(xx, u), x)
 
 
 def cost(costs, states, actions, parameters=None):
@@ -87,7 +77,7 @@ def cost(costs, states, actions, parameters=None):
             c.evaluate_cache = c.evaluate(states[t], actions[t], parameters[t])
         J += (
             float(c.evaluate_cache[0])
-            if c.evaluate_cache.ndim > 0
+            if np.asarray(c.evaluate_cache).ndim > 0
             else float(c.evaluate_cache)
         )
     return J

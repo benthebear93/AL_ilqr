@@ -1,8 +1,7 @@
-import jax.numpy as jnp
-from dataclasses import replace
-from .constraints import constraint_violation, constraint_violation_eval
-from src.costs import cost
+import numpy as np
+from .constraints import constraint_violation_eval
 from src.augmented_lagrangian import cost_augmented
+from src.costs import cost
 
 
 def cost_method(problem, mode="nominal"):
@@ -44,7 +43,7 @@ def cost_update(data, problem, mode="nominal"):
         J = 0.0
 
     # update objective
-    data = replace(data, objective=data.objective.at[0].set(J))
+    data.objective[0] = J
 
     # update constraint violation if applicable
     if hasattr(problem.objective.costs, "constraint_data"):
@@ -53,9 +52,9 @@ def cost_update(data, problem, mode="nominal"):
             problem.states,
             problem.actions,
             problem.parameters,
-            norm_type=jnp.inf,
+            norm_type=np.inf,
         )
-        data = replace(data, max_violation=data.max_violation.at[0].set(violation))
+        data.max_violation[0] = violation
 
     return data
 
@@ -65,18 +64,11 @@ def update_nominal_trajectory(problem):
     Copy current states/actions into nominal trajectory.
     """
     H = len(problem.states)
-    new_nominal_states = list(problem.nominal_states)
-    new_nominal_actions = list(problem.nominal_actions)
-
     for t in range(H):
-        problem.nominal_states[t] = problem.states[t]
+        problem.nominal_states[t] = problem.states[t].copy()
         if t < H - 1:
-            problem.nominal_actions[t] = problem.actions[t]
-    return replace(
-        problem,
-        nominal_states=new_nominal_states,
-        nominal_actions=new_nominal_actions,
-    )
+            problem.nominal_actions[t] = problem.actions[t].copy()
+    return problem
 
 
 def trajectory_sensitivities(problem, policy, data):
@@ -84,24 +76,25 @@ def trajectory_sensitivities(problem, policy, data):
     Compute trajectory sensitivities for line search.
     """
     H = len(problem.states)
-    trajectory = jnp.zeros_like(problem.trajectory)
+    trajectory = np.zeros_like(problem.trajectory)
 
     for t in range(H - 1):
         idx_x = data.indices_state[t]
         idx_u = data.indices_action[t]
         idx_y = data.indices_state[t + 1]
 
-        zx = trajectory.at[idx_x].get()  # state slice
+        zx = trajectory[idx_x]  # state slice
         zu = policy.k[t] + policy.K[t] @ zx
         zy = (
             problem.model.jacobian_action[t] @ zu + problem.model.jacobian_state[t] @ zx
         )
 
         # update trajectory vector
-        trajectory = trajectory.at[idx_u].set(zu)
-        trajectory = trajectory.at[idx_y].set(zy)
+        trajectory[idx_u] = zu
+        trajectory[idx_y] = zy
 
-    return replace(problem, trajectory=trajectory)
+    problem.trajectory = trajectory
+    return problem
 
 
 def trajectories(problem, mode="nominal"):

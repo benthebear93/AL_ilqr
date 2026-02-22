@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-import jax.numpy as jnp
+import numpy as np
 
 
 @dataclass
@@ -15,10 +15,10 @@ def model_data(dynamics):
     Python port of Julia's model_data
     dynamics: list of Dynamics objects
     """
-    jacobian_state = [jnp.zeros((d.num_next_state, d.num_state)) for d in dynamics]
-    jacobian_action = [jnp.zeros((d.num_next_state, d.num_action)) for d in dynamics]
+    jacobian_state = [np.zeros((d.num_next_state, d.num_state)) for d in dynamics]
+    jacobian_action = [np.zeros((d.num_next_state, d.num_action)) for d in dynamics]
     jacobian_parameter = [
-        jnp.zeros((d.num_next_state, d.num_parameter)) for d in dynamics
+        np.zeros((d.num_next_state, d.num_parameter)) for d in dynamics
     ]
 
     return ModelData(dynamics, jacobian_state, jacobian_action, jacobian_parameter)
@@ -30,6 +30,6 @@ def reset_model(model: ModelData):
     """
     H = len(model.dynamics) + 1
     for t in range(H - 1):
-        model.jacobian_state[t] = jnp.zeros_like(model.jacobian_state[t])
-        model.jacobian_action[t] = jnp.zeros_like(model.jacobian_action[t])
-        model.jacobian_parameter[t] = jnp.zeros_like(model.jacobian_parameter[t])
+        model.jacobian_state[t].fill(0.0)
+        model.jacobian_action[t].fill(0.0)
+        model.jacobian_parameter[t].fill(0.0)

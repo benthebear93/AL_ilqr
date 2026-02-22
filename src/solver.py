@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-import jax.numpy as jnp
+import numpy as np
 
 from data.policy import policy_data, PolicyData
 from data.problem import problem_data, ProblemData
@@ -18,7 +18,7 @@ class Solver:
 
 def solver_from_objective(dynamics, objective, parameters=None, options=None):
     if parameters is None:
-        parameters = [jnp.zeros(d.num_parameter) for d in dynamics] + [jnp.zeros((0,))]
+        parameters = [np.zeros(d.num_parameter) for d in dynamics] + [np.zeros((0,))]
     if options is None:
         options = Options()
 
@@ -38,7 +38,7 @@ def solver_from_costs_constraints(
     dynamics, costs, constraints, parameters=None, options=None
 ):
     if parameters is None:
-        parameters = [jnp.zeros(d.num_parameter) for d in dynamics] + [jnp.zeros((0,))]
+        parameters = [np.zeros(d.num_parameter) for d in dynamics] + [np.zeros((0,))]
     if options is None:
         options = Options()
 

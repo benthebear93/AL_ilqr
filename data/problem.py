@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-import jax.numpy as jnp
+import numpy as np
 
 from .model import model_data
 from .objective import objective_data, ObjectiveData
@@ -39,31 +39,30 @@ def problem_data(dynamics, costs, parameters=None):
     parameters: list of disturbance vectors (default zeros)
     """
     if parameters is None:
-        parameters = [jnp.zeros(d.num_parameter) for d in dynamics] + [jnp.zeros((0,))]
+        parameters = [np.zeros(d.num_parameter) for d in dynamics] + [np.zeros((0,))]
 
     if len(parameters) == len(dynamics):
-        parameters = parameters + [jnp.zeros((0,))]
+        parameters = parameters + [np.zeros((0,))]
     assert len(dynamics) + 1 == len(parameters)
 
     # current trajectory
-    states = [jnp.zeros((d.num_state,)) for d in dynamics] + [
-        jnp.zeros((dynamics[-1].num_next_state,))
+    states = [np.zeros((d.num_state,)) for d in dynamics] + [
+        np.zeros((dynamics[-1].num_next_state,))
     ]
-    actions = [jnp.zeros((d.num_action,)) for d in dynamics] + [jnp.zeros((0,))]
+    actions = [np.zeros((d.num_action,)) for d in dynamics] + [np.zeros((0,))]
 
     # nominal trajectory
-    nominal_states = [jnp.zeros((d.num_state,)) for d in dynamics] + [
-        jnp.zeros((dynamics[-1].num_next_state,))
+    nominal_states = [np.zeros((d.num_state,)) for d in dynamics] + [
+        np.zeros((dynamics[-1].num_next_state,))
     ]
-    nominal_actions = [jnp.zeros((d.num_action,)) for d in dynamics] + [jnp.zeros((0,))]
+    nominal_actions = [np.zeros((d.num_action,)) for d in dynamics] + [np.zeros((0,))]
 
     # model data
     model = model_data(dynamics)
 
     objective = objective_data(dynamics, costs)
-    print("problem data objective :", type(objective.costs))
     # trajectory vector z
-    trajectory = jnp.zeros(num_trajectory(dynamics))
+    trajectory = np.zeros(num_trajectory(dynamics))
 
     return ProblemData(
         states,

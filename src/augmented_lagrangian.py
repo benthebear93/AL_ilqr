@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-import jax.numpy as jnp
+import numpy as np
 
 from data.constraints import constraint_data_func, constraint
 from src.costs import cost
@@ -29,21 +29,21 @@ def augmented_lagrangian(model, costs, constraints):
 
     constraint_data = constraint_data_func(model, constraints)
     # penalties
-    constraint_penalty = [jnp.ones(c.num_constraint) for c in constraints]
+    constraint_penalty = [np.ones(c.num_constraint) for c in constraints]
     constraint_penalty_matrix = [
-        jnp.diag(jnp.ones(c.num_constraint)) for c in constraints
+        np.diag(np.ones(c.num_constraint)) for c in constraints
     ]
 
     # duals
-    constraint_dual = [jnp.zeros(c.num_constraint) for c in constraints]
+    constraint_dual = [np.zeros(c.num_constraint) for c in constraints]
 
     # active set
-    active_set = [jnp.ones((c.num_constraint,), dtype=int) for c in constraints]
+    active_set = [np.ones((c.num_constraint,), dtype=int) for c in constraints]
 
     # pre-allocated memory
-    constraint_tmp = [jnp.zeros(c.num_constraint) for c in constraints]
+    constraint_tmp = [np.zeros(c.num_constraint) for c in constraints]
     constraint_jacobian_state_tmp = [
-        jnp.zeros(
+        np.zeros(
             (
                 c.num_constraint,
                 model[t].num_state if t < H - 1 else model[-1].num_next_state,
@@ -52,7 +52,7 @@ def augmented_lagrangian(model, costs, constraints):
         for t, c in enumerate(constraints)
     ]
     constraint_jacobian_action_tmp = [
-        jnp.zeros((c.num_constraint, model[t].num_action if t < H - 1 else 0))
+        np.zeros((c.num_constraint, model[t].num_action if t < H - 1 else 0))
         for t, c in enumerate(constraints)
     ]
 
@@ -104,12 +104,12 @@ def active_set_update(a, data, lam):
 
     for t in range(H):
         # set all constraints active
-        a[t] = jnp.ones_like(a[t])
+        a[t].fill(1)
 
         # check inequality constraints
         for i in data.constraints[t].indices_inequality:
             if (c[t][i] < 0.0) and (lam[t][i] == 0.0):
-                a[t] = a[t].at[i].set(0)
+                a[t][i] = 0
 
 
 def augmented_lagrangian_update(
@@ -128,9 +128,7 @@ def augmented_lagrangian_update(
     for t in range(H):
         num_constraint = constraints[t].num_constraint
         for i in range(num_constraint):
-            lam[t] = lam[t].at[i].set(lam[t][i] + rho[t][i] * c[t][i])
+            lam[t][i] += rho[t][i] * c[t][i]
             if i in constraints[t].indices_inequality:
-                lam[t] = lam[t].at[i].set(jnp.maximum(0.0, lam[t][i]))
-            rho[t] = (
-                rho[t].at[i].set(jnp.minimum(scaling_penalty * rho[t][i], max_penalty))
-            )
+                lam[t][i] = max(0.0, lam[t][i])
+            rho[t][i] = min(scaling_penalty * rho[t][i], max_penalty)

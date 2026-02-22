@@ -1,5 +1,6 @@
-import jax
-import jax.numpy as jnp
+import numpy as np
+
+from .finite_diff import jacobian
 
 
 class Dynamics:
@@ -10,17 +11,9 @@ class Dynamics:
         self.num_parameter = num_parameter
         self.num_next_state = num_state if num_next_state is None else num_next_state
 
-        # define jacobians
-        self._jac_state = jax.jacfwd(f, argnums=0)
-        self._jac_action = jax.jacfwd(f, argnums=1)
-        if num_parameter > 0:
-            self._jac_param = jax.jacfwd(f, argnums=2)
-        else:
-            self._jac_param = None
-
-        self.evaluate_cache = jnp.zeros((self.num_next_state,))
-        self.jacobian_state_cache = jnp.zeros((self.num_next_state, self.num_state))
-        self.jacobian_action_cache = jnp.zeros((self.num_next_state, self.num_action))
+        self.evaluate_cache = np.zeros((self.num_next_state,))
+        self.jacobian_state_cache = np.zeros((self.num_next_state, self.num_state))
+        self.jacobian_action_cache = np.zeros((self.num_next_state, self.num_action))
 
     def evaluate(self, x, u, w=None):
         if self.num_parameter > 0:
@@ -31,25 +24,28 @@ class Dynamics:
         return self.evaluate_cache
 
     def jacobian_state(self, x, u, w=None):
+        x = np.asarray(x, dtype=float)
         if self.num_parameter > 0:
-            out = self._jac_state(x, u, w)
+            out = jacobian(lambda xx: self.f(xx, u, w), x)
         else:
-            out = self._jac_state(x, u)
+            out = jacobian(lambda xx: self.f(xx, u), x)
         self.jacobian_state_cache = out
         return self.jacobian_state_cache
 
     def jacobian_action(self, x, u, w=None):
+        u = np.asarray(u, dtype=float)
         if self.num_parameter > 0:
-            out = self._jac_action(x, u, w)
+            out = jacobian(lambda uu: self.f(x, uu, w), u)
         else:
-            out = self._jac_action(x, u)
+            out = jacobian(lambda uu: self.f(x, uu), u)
         self.jacobian_action_cache = out
         return self.jacobian_action_cache
 
     def jacobian_parameter(self, x, u, w):
-        if self._jac_param is None:
+        if self.num_parameter == 0:
             raise ValueError("This dynamics has no parameters")
-        return self._jac_param(x, u, w)
+        w = np.asarray(w, dtype=float)
+        return jacobian(lambda ww: self.f(x, u, ww), w)
 
 
 def dynamics_eval(d: Dynamics, x, u, w=None):
@@ -92,9 +88,9 @@ class DynamicsUserDefined:
         self.num_action = num_action
         self.num_parameter = num_parameter
 
-        self.evaluate_cache = jnp.zeros((self.num_next_state,))
-        self.jacobian_state_cache = jnp.zeros((self.num_next_state, self.num_state))
-        self.jacobian_action_cache = jnp.zeros((self.num_next_state, self.num_action))
+        self.evaluate_cache = np.zeros((self.num_next_state,))
+        self.jacobian_state_cache = np.zeros((self.num_next_state, self.num_state))
+        self.jacobian_action_cache = np.zeros((self.num_next_state, self.num_action))
 
     def evaluate(self, x, u, w=None):
         if self.num_parameter > 0:

@@ -1,5 +1,4 @@
-import jax
-import jax.numpy as jnp
+import numpy as np
 
 from src.dynamics import Dynamics, init_dynamics
 from src.rollout import rollout
@@ -18,7 +17,6 @@ from src.options import Options
 import meshcat
 import meshcat.geometry as g
 import meshcat.transformations as tf
-import numpy as np
 from meshcat.animation import Animation
 from utils.data_manage import save_outputs
 
@@ -30,7 +28,7 @@ num_action = 2
 
 # continuous and discrete dynamics
 def car_continuous(x, u):
-    return jnp.array([u[0] * jnp.cos(x[2]), u[0] * jnp.sin(x[2]), u[1]])
+    return np.array([u[0] * np.cos(x[2]), u[0] * np.sin(x[2]), u[1]])
 
 
 def car_discrete(x, u):
@@ -43,28 +41,28 @@ car = init_dynamics(car_discrete, num_state, num_action)
 dynamics = [car for _ in range(T - 1)]
 
 # initial and goal states
-x1 = jnp.array([0.0, 0.0, 0.0])
-xT = jnp.array([1.0, 1.0, 0.0])
+x1 = np.array([0.0, 0.0, 0.0])
+xT = np.array([1.0, 1.0, 0.0])
 
 # rollout with small controls
-u_bar = [0.01 * jnp.array([1.0, 0.1]) for _ in range(T - 1)]
-x_bar = rollout(car, x1, jnp.stack(u_bar))
+u_bar = [0.01 * np.array([1.0, 0.1]) for _ in range(T - 1)]
+x_bar = rollout(car, x1, np.stack(u_bar))
 
 # objective
 objective = [
     Cost(
-        lambda x, u: jnp.dot(x - xT, x - xT) + 0.01 * jnp.dot(u, u),
+        lambda x, u: np.dot(x - xT, x - xT) + 0.01 * np.dot(u, u),
         num_state,
         num_action,
     )
     for _ in range(T - 1)
 ]
-objective.append(Cost(lambda x, u: 1000.0 * jnp.dot(x - xT, x - xT), num_state, 0))
+objective.append(Cost(lambda x, u: 1000.0 * np.dot(x - xT, x - xT), num_state, 0))
 # constraints
-ul = -5.0 * jnp.ones(num_action)
-uu = 5.0 * jnp.ones(num_action)
+ul = -5.0 * np.ones(num_action)
+uu = 5.0 * np.ones(num_action)
 
-p_obs = jnp.array([0.5, 0.5])
+p_obs = np.array([0.5, 0.5])
 r_obs = 0.1
 
 constraints = []
@@ -72,11 +70,11 @@ for _ in range(T - 1):
 
     def constraint_stage(x, u):
         e = x[:2] - p_obs
-        return jnp.concatenate(
+        return np.concatenate(
             [
                 ul - u,  # lower bound
                 u - uu,  # upper bound
-                jnp.array([r_obs**2 - jnp.dot(e, e)]),  # obstacle
+                np.array([r_obs**2 - np.dot(e, e)]),  # obstacle
             ]
         )
 
@@ -89,8 +87,8 @@ for _ in range(T - 1):
 
 def constraint_terminal(x, u):
     e = x[:2] - p_obs
-    return jnp.concatenate(
-        [x - xT, jnp.array([r_obs**2 - jnp.dot(e, e)])]  # goal  # obstacle
+    return np.concatenate(
+        [x - xT, np.array([r_obs**2 - np.dot(e, e)])]  # goal  # obstacle
     )
 
 
@@ -106,8 +104,8 @@ solver = solver_from_costs_constraints(
     dynamics, objective, constraints=constraints, options=options
 )
 
-initialize_controls(solver, jnp.stack(u_bar))
-initialize_states(solver, jnp.stack(x_bar))
+initialize_controls(solver, np.stack(u_bar))
+initialize_states(solver, np.stack(x_bar))
 
 # solve
 solve(solver)

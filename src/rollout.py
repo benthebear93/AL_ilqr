@@ -1,15 +1,13 @@
-import jax
-import jax.numpy as jnp
-from jax import lax
+import numpy as np
 
 
 def rollout(dynamics, initial_state, actions):
-    def step(x_prev, u):
-        x_next = dynamics.evaluate(x_prev, u)
-        return x_next, x_next
-
-    _, x_hist = jax.lax.scan(step, initial_state, actions)
-    return jnp.vstack([initial_state, x_hist])
+    x_hist = [np.asarray(initial_state, dtype=float)]
+    x_prev = x_hist[0]
+    for u in actions:
+        x_prev = dynamics.evaluate(x_prev, u)
+        x_hist.append(np.asarray(x_prev, dtype=float))
+    return np.vstack(x_hist)
 
 
 def rollout_with_policy_inplace(policy, problem, step_size=1.0):

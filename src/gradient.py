@@ -1,10 +1,7 @@
-import jax.numpy as jnp
-from dataclasses import replace
 from data.method import trajectories
 from .costs import cost_gradient, cost_hessian
 from .constraints import jacobian_const
 from src.dynamics import jacobian_model
-from .augmented_lagrangian import AugmentedLagrangianCosts
 
 
 def compute_model_gradients(dynamics, problem, mode="nominal"):
@@ -65,7 +62,7 @@ def compute_augmented_lagrangian_gradients(objective, problem, mode="nominal"):
     for t in range(H):
         num_constraint = constraints[t].num_constraint
         for i in range(num_constraint):
-            I_rho[t] = I_rho[t].at[i, i].set(rho[t][i] * a[t][i])
+            I_rho[t][i, i] = rho[t][i] * a[t][i]
 
         c_tmp[t] = lam[t] + I_rho[t] @ c[t]
 

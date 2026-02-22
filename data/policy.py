@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-import jax.numpy as jnp
+import numpy as np
 
 
 # ================================================
@@ -51,36 +51,36 @@ def policy_data(dynamics):
     """
 
     # feedback & feedforward gains
-    K = [jnp.zeros((d.num_action, d.num_state)) for d in dynamics]
-    k = [jnp.zeros((d.num_action,)) for d in dynamics]
+    K = [np.zeros((d.num_action, d.num_state)) for d in dynamics]
+    k = [np.zeros((d.num_action,)) for d in dynamics]
 
-    K_candidate = [jnp.zeros((d.num_action, d.num_state)) for d in dynamics]
-    k_candidate = [jnp.zeros((d.num_action,)) for d in dynamics]
+    K_candidate = [np.zeros((d.num_action, d.num_state)) for d in dynamics]
+    k_candidate = [np.zeros((d.num_action,)) for d in dynamics]
 
     # value function approximation
-    P = [jnp.zeros((d.num_state, d.num_state)) for d in dynamics]
-    p = [jnp.zeros((d.num_state,)) for d in dynamics]
+    P = [np.zeros((d.num_state, d.num_state)) for d in dynamics]
+    p = [np.zeros((d.num_state,)) for d in dynamics]
 
     # add terminal state dimension
-    P.append(jnp.zeros((dynamics[-1].num_next_state, dynamics[-1].num_next_state)))
-    p.append(jnp.zeros((dynamics[-1].num_next_state,)))
+    P.append(np.zeros((dynamics[-1].num_next_state, dynamics[-1].num_next_state)))
+    p.append(np.zeros((dynamics[-1].num_next_state,)))
 
     value = Value(p, P)
 
     # action-value function approximation
-    Qx = [jnp.zeros((d.num_state,)) for d in dynamics]
-    Qu = [jnp.zeros((d.num_action,)) for d in dynamics]
-    Qxx = [jnp.zeros((d.num_state, d.num_state)) for d in dynamics]
-    Quu = [jnp.zeros((d.num_action, d.num_action)) for d in dynamics]
-    Qux = [jnp.zeros((d.num_action, d.num_state)) for d in dynamics]
+    Qx = [np.zeros((d.num_state,)) for d in dynamics]
+    Qu = [np.zeros((d.num_action,)) for d in dynamics]
+    Qxx = [np.zeros((d.num_state, d.num_state)) for d in dynamics]
+    Quu = [np.zeros((d.num_action, d.num_action)) for d in dynamics]
+    Qux = [np.zeros((d.num_action, d.num_state)) for d in dynamics]
 
     action_value = ActionValue(Qx, Qu, Qxx, Quu, Qux)
 
     # pre-allocated memory
-    xx_hat_tmp = [jnp.zeros((d.num_state, d.num_next_state)) for d in dynamics]
-    ux_hat_tmp = [jnp.zeros((d.num_action, d.num_next_state)) for d in dynamics]
-    uu_tmp = [jnp.zeros((d.num_action, d.num_action)) for d in dynamics]
-    ux_tmp = [jnp.zeros((d.num_action, d.num_state)) for d in dynamics]
+    xx_hat_tmp = [np.zeros((d.num_state, d.num_next_state)) for d in dynamics]
+    ux_hat_tmp = [np.zeros((d.num_action, d.num_next_state)) for d in dynamics]
+    uu_tmp = [np.zeros((d.num_action, d.num_action)) for d in dynamics]
+    ux_tmp = [np.zeros((d.num_action, d.num_state)) for d in dynamics]
 
     return PolicyData(
         K,
