@@ -1,6 +1,7 @@
 from data.method import trajectories
 from .costs import cost_gradient, cost_hessian
 from .constraints import jacobian_const
+from .augmented_lagrangian import AugmentedLagrangianCosts
 from src.dynamics import jacobian_model
 
 
@@ -103,6 +104,10 @@ def compute_problem_gradients(problem, mode="nominal"):
     Compute both model and cost gradients.
     """
     compute_model_gradients(problem.model.dynamics, problem, mode=mode)
-    compute_augmented_lagrangian_gradients(problem.objective.costs, problem, mode=mode)
+    objective = problem.objective.costs
+    if isinstance(objective, AugmentedLagrangianCosts):
+        compute_augmented_lagrangian_gradients(objective, problem, mode=mode)
+    else:
+        compute_objective_gradients(objective, problem, mode=mode)
 
     return problem

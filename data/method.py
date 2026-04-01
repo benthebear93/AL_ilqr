@@ -1,6 +1,6 @@
 import numpy as np
 from .constraints import constraint_violation_eval
-from src.augmented_lagrangian import cost_augmented
+from src.augmented_lagrangian import AugmentedLagrangianCosts, cost_augmented
 from src.costs import cost
 
 
@@ -8,19 +8,19 @@ def cost_method(problem, mode="nominal"):
     """
     Compute cost for a given trajectory.
     """
+    objective = problem.objective.costs
     if mode == "nominal":
-        return cost(
-            problem.objective.costs,
-            problem.nominal_states,
-            problem.nominal_actions,
-            problem.parameters,
-        )
+        states = problem.nominal_states
+        actions = problem.nominal_actions
     elif mode == "current":
-        return cost(
-            problem.objective.costs, problem.states, problem.actions, problem.parameters
-        )
+        states = problem.states
+        actions = problem.actions
     else:
         return 0.0
+
+    if isinstance(objective, AugmentedLagrangianCosts):
+        return cost_augmented(objective, states, actions, problem.parameters)
+    return cost(objective, states, actions, problem.parameters)
 
 
 def cost_update(data, problem, mode="nominal"):
@@ -28,27 +28,29 @@ def cost_update(data, problem, mode="nominal"):
     Update data.objective with current or nominal trajectory cost.
     Also compute constraint violation if AugmentedLagrangian is used.
     """
+    objective = problem.objective.costs
     if mode == "nominal":
-        J = cost_augmented(
-            problem.objective.costs,
-            problem.nominal_states,
-            problem.nominal_actions,
-            problem.parameters,
-        )
+        states = problem.nominal_states
+        actions = problem.nominal_actions
     elif mode == "current":
-        J = cost_augmented(
-            problem.objective.costs, problem.states, problem.actions, problem.parameters
-        )
+        states = problem.states
+        actions = problem.actions
     else:
         J = 0.0
+
+    if mode in ("nominal", "current"):
+        if isinstance(objective, AugmentedLagrangianCosts):
+            J = cost_augmented(objective, states, actions, problem.parameters)
+        else:
+            J = cost(objective, states, actions, problem.parameters)
 
     # update objective
     data.objective[0] = J
 
     # update constraint violation if applicable
-    if hasattr(problem.objective.costs, "constraint_data"):
+    if isinstance(objective, AugmentedLagrangianCosts):
         violation = constraint_violation_eval(
-            problem.objective.costs.constraint_data,
+            objective.constraint_data,
             problem.states,
             problem.actions,
             problem.parameters,

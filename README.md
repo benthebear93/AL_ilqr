@@ -36,6 +36,12 @@ uv sync
 # run ilqr with car model
 uv run python -m examples.car
 
+# run trajectory optimization for a 3-link finger rotating a disk
+uv run python -m examples.finger_rotate_object
+
+# optional Viser visualization
+uv run python -m examples.finger_rotate_object --viser
+
 # meshcat visualization
 uv run python -m test.test_car
 ```

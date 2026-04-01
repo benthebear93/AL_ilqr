@@ -43,3 +43,9 @@ ENV/
 *.tmp
 *.temp
 *.bak
+
+# ---------------------------
+# Project-generated artifacts
+# ---------------------------
+models/planar_push/build/
+data/reference_trajectory/
